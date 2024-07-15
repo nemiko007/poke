@@ -1,95 +1,71 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+// pages/index.js
+"use client";
 
-export default function Home() {
+// pages/index.js
+
+import { useState, useEffect } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+
+const fetchRandomPokemon = async () => {
+  const index = Math.floor(Math.random() * 898 + 1); // ポケモンの総数に合わせて調整
+  const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${index}`);
+  const result = await res.json();
+  return result;
+};
+
+const IndexPage = () => {
+  const [pokemonName, setPokemonName] = useState("");
+  const [stats, setStats] = useState({});
+  const [userMessage, setUserMessage] = useState("");
+  const [pokemonImage, setPokemonImage] = useState("");
+  const [showImage, setShowImage] = useState(false); // 画像表示フラグ
+
+  const startGame = async () => {
+    try {
+      const pokemon = await fetchRandomPokemon();
+      setPokemonName(pokemon.name);
+      setStats(pokemon.stats.reduce((acc, stat) => {
+        acc[stat.stat.name] = stat.base_stat;
+        return acc;
+      }, {}));
+      setPokemonImage(pokemon.sprites.front_default);
+      setUserMessage(""); // ゲームスタート時にエラーメッセージをクリア
+      setShowImage(false); // 画像非表示
+    } catch (error) {
+      console.error("エラーが発生しました:", error);
+    }
+  };
+
+  const handleGuess = (event) => {
+    event.preventDefault();
+    const userGuess = event.target.elements.guess.value.toLowerCase();
+    if (userGuess === pokemonName.toLowerCase()) {
+      alert("正解！");
+      startGame(); // 新しいポケモンの種族値を表示
+    } else {
+      setUserMessage(`正解は ${pokemonName} でした`); // 不正解時に正答を表示
+    }
+    setShowImage(true); // 画像表示
+  };
+
+  useEffect(() => {
+    startGame();
+  }, []);
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    <div className="container">
+      <h1>ポケモン種族値当てゲーム</h1>
+      <p>以下の種族値のポケモンの名前を、以下の欄に英語表記で記入してください。</p>
+      <p>種族値: {JSON.stringify(stats)}</p>
+      {showImage && <img src={pokemonImage} alt={pokemonName} className="img-fluid" />} {/* ポケモンの画像を表示 */}
+      <form onSubmit={handleGuess}>
+        <input type="text" name="guess" placeholder="ポケモンの名前を入力" />
+        <button type="submit">答える</button>
+      </form>
+      <button onClick={startGame} className="btn btn-primary">ゲームスタート</button>
+      <p style={{ color: "red" }}>{userMessage}</p>
+    </div>
   );
-}
+};
+
+export default IndexPage;
